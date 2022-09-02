@@ -1,10 +1,10 @@
 package com.reddit.reddit_clone.model;
 
 import lombok.*;
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.time.Instant;
 
 @Data
