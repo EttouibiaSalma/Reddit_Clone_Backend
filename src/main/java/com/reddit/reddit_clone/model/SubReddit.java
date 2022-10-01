@@ -15,7 +15,7 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-public class subReddit {
+public class SubReddit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

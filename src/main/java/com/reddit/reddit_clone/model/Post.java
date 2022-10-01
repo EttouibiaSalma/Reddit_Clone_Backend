@@ -29,5 +29,5 @@ public class Post {
     private Instant createdDate;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id", referencedColumnName = "id")
-    private subReddit subReddit;
+    private SubReddit subReddit;
 }
