@@ -1,6 +1,7 @@
 package com.reddit.reddit_clone.service;
 
 import com.reddit.reddit_clone.dto.RegistrationRequest;
+import com.reddit.reddit_clone.exception.ApplicationException;
 import com.reddit.reddit_clone.model.NotificationEmail;
 import com.reddit.reddit_clone.model.User;
 import com.reddit.reddit_clone.model.VerificationToken;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,7 +36,7 @@ public class AuthService {
         userRepository.save(user);
         String token = generateVerificationToken(user);
         mailService.sendEmail(new NotificationEmail("Activation mail", user.getEmail(), "Thank you for signing up to Reddit, " +
-                "Please click the link bellow to activate your account: http://localhost:8080/api/auth/activateAccount" + token));
+                "Please click the link bellow to activate your account: http://localhost:8080/api/auth/accountVerification/" + token));
     }
 
     private String generateVerificationToken(User user) {
@@ -44,5 +46,18 @@ public class AuthService {
         verificationToken.setUser(user);
         verificationTokenRepository.save(verificationToken);
         return token;
+    }
+
+    public void verifyToken(String token){
+        Optional<VerificationToken> assignedToken = verificationTokenRepository.findByToken(token);
+        assignedToken.orElseThrow(() -> new ApplicationException("Invalid token"));
+        fetchUserAndEnable(assignedToken.get());
+    }
+
+    @Transactional
+    public void fetchUserAndEnable(VerificationToken assignedToken) {
+        String username = assignedToken.getUser().getUsername();
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new ApplicationException("user Not found" + username));
+        user.setEnabled(true);
     }
 }

@@ -1,6 +1,6 @@
 package com.reddit.reddit_clone.service;
 
-import com.reddit.reddit_clone.exception.ActivationMailSendException;
+import com.reddit.reddit_clone.exception.ApplicationException;
 import com.reddit.reddit_clone.model.NotificationEmail;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class MailService {
             log.info("Activation email sent successfully!");
         } catch (MailException e) {
             log.error("error occurred when sending activation mail");
-            throw new ActivationMailSendException("Exception occurred when sending email to " + notificationEmail.getRecipient(), e);
+            throw new ApplicationException("Exception occurred when sending email to " + notificationEmail.getRecipient());
         }
     }
 
