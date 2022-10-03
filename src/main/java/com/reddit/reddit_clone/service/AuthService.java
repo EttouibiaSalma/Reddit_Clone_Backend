@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @Service
 @AllArgsConstructor
-@Slf4j
+@Transactional
 public class AuthService {
 
     private final PasswordEncoder encoder;
