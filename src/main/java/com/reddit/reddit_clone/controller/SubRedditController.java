@@ -1,6 +1,7 @@
 package com.reddit.reddit_clone.controller;
 
 import com.reddit.reddit_clone.dto.SubRedditDTO;
+import com.reddit.reddit_clone.model.SubReddit;
 import com.reddit.reddit_clone.service.SubRedditService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,5 +27,10 @@ public class SubRedditController {
     @GetMapping
     public ResponseEntity<List<SubRedditDTO>> getAllSubReddits(){
         return new ResponseEntity<>(subRedditService.getAll(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubRedditDTO> getSubReddit(@PathVariable Long id){
+        return new ResponseEntity<>(subRedditService.get(id), HttpStatus.OK);
     }
 }
