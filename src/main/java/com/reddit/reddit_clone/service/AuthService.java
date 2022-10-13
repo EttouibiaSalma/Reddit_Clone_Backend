@@ -2,6 +2,7 @@ package com.reddit.reddit_clone.service;
 
 import com.reddit.reddit_clone.dto.AuthenticationResponse;
 import com.reddit.reddit_clone.dto.LoginRequest;
+import com.reddit.reddit_clone.dto.RefreshTokenRequest;
 import com.reddit.reddit_clone.dto.RegistrationRequest;
 import com.reddit.reddit_clone.exception.ApplicationException;
 import com.reddit.reddit_clone.model.NotificationEmail;
@@ -12,6 +13,7 @@ import com.reddit.reddit_clone.repository.VerificationTokenRepository;
 import com.reddit.reddit_clone.security.JwtProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +37,7 @@ public class AuthService {
     private final MailService mailService;
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public void register(RegistrationRequest registrationRequest){
@@ -70,12 +73,42 @@ public class AuthService {
         String username = assignedToken.getUser().getUsername();
         User user = userRepository.findByUsername(username).orElseThrow(()-> new ApplicationException("user Not found" + username));
         user.setEnabled(true);
+        userRepository.save(user);
     }
     public AuthenticationResponse login(LoginRequest loginRequest){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getPassword(),
-                loginRequest.getUsername()));
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken
+                (loginRequest.getPassword(), loginRequest.getUsername()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtProvider.generateToken(authentication);
-        return new AuthenticationResponse(token, loginRequest.getUsername());
+        return AuthenticationResponse.builder()
+                .authenticationToken(token)
+                .refreshToken(refreshTokenService.generateRefreshToken().getToken())
+                .expireAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationInMillis()))
+                .username(loginRequest.getUsername())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public User getCurrentUser() {
+        org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.
+                getContext().getAuthentication().getPrincipal();
+        return userRepository.findByUsername(principal.getUsername())
+                .orElseThrow(() -> new ApplicationException("User name not found - " + principal.getUsername()));
+    }
+
+    public boolean isLoggedIn() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
+    }
+
+    public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        refreshTokenService.validateRefreshToken(refreshTokenRequest.getRefreshToken());
+        String token = jwtProvider.generateTokenWithUserName(refreshTokenRequest.getUsername());
+        return AuthenticationResponse.builder()
+                .authenticationToken(token)
+                .refreshToken(refreshTokenRequest.getRefreshToken())
+                .expiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationInMillis()))
+                .username(refreshTokenRequest.getUsername())
+                .build();
     }
 }
