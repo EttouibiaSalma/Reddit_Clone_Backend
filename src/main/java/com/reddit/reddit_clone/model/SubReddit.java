@@ -21,7 +21,7 @@ public class SubReddit {
     private Long id;
     @NotBlank(message = "name is required")
     private String name;
-    @NotBlank(message = "descriptoin is required")
+    @NotBlank(message = "description is required")
     private String description;
     @OneToMany(fetch = FetchType.LAZY)
     private List<Post> posts;
